@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.database import Base, engine
-from app.routers import productos
+from app.routers import productos, publico
 from app.schemas import Salud
 
 settings = get_settings()
@@ -74,4 +74,5 @@ def health():
     )
 
 
+app.include_router(publico.router)
 app.include_router(productos.router)

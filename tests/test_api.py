@@ -53,5 +53,12 @@ def test_flujo_completo():
         r = c.get("/api/v1/productos/resumen", headers=H)
         assert r.json()["unidades_en_stock"] == 14
 
+        # Consulta pública, sin llave, con formato {"data": ...}
+        r = c.get(f"/api/productos/{pid}")
+        assert r.status_code == 200 and r.json()["data"]["sku"] == "LAP-001"
+        assert r.json()["data"]["id"] == str(pid)
+        assert len(c.get("/api/productos").json()["data"]) == 1
+        assert c.get("/api/productos/9999").status_code == 404
+
         assert c.delete(f"/api/v1/productos/{pid}", headers=H).status_code == 204
         assert c.get(f"/api/v1/productos/{pid}", headers=H).status_code == 404
