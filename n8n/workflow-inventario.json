@@ -13,7 +13,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $vars.INVENTARIO_URL || 'https://inventario-api.onrender.com' }}/api/v1/productos",
+        "url": "={{ $vars.INVENTARIO_URL || 'https://inventario-api-qu64.onrender.com' }}/api/v1/productos",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
