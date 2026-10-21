@@ -1,0 +1,23 @@
+# Blueprint de Render: crea la base Postgres y la API (desde el Dockerfile) en un solo paso.
+databases:
+  - name: inventario-db
+    plan: free
+    databaseName: inventario
+    user: inventario
+
+services:
+  - type: web
+    name: inventario-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true            # cada push a main vuelve a desplegar
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inventario-db
+          property: connectionString
+      - key: API_KEY
+        generateValue: true     # Render genera una llave segura; cópiala del panel para n8n
+      - key: ENVIRONMENT
+        value: produccion

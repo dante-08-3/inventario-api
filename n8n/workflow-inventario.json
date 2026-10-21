@@ -1,0 +1,74 @@
+{
+  "name": "Inventario API - alerta de stock bajo",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "id": "a1",
+      "name": "Cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.INVENTARIO_URL || 'https://inventario-api.onrender.com' }}/api/v1/productos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "solo_stock_bajo", "value": "true" },
+            { "name": "por_pagina", "value": "100" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-API-Key", "value": "PEGA_AQUI_TU_API_KEY" }]
+        },
+        "options": {}
+      },
+      "id": "a2",
+      "name": "GET productos con stock bajo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "id": "a3",
+      "name": "Separar productos",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "mensaje",
+              "value": "=⚠️ {{ $json.nombre }} ({{ $json.sku }}) tiene {{ $json.stock }} unidades (mínimo {{ $json.stock_minimo }})",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a4",
+      "name": "Armar alerta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 0]
+    }
+  ],
+  "connections": {
+    "Cada hora": { "main": [[{ "node": "GET productos con stock bajo", "type": "main", "index": 0 }]] },
+    "GET productos con stock bajo": { "main": [[{ "node": "Separar productos", "type": "main", "index": 0 }]] },
+    "Separar productos": { "main": [[{ "node": "Armar alerta", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
