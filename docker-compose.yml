@@ -32,6 +32,25 @@ services:
       db:
         condition: service_healthy
 
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: inventario-n8n
+    restart: unless-stopped
+    environment:
+      GENERIC_TIMEZONE: America/Mexico_City
+      TZ: America/Mexico_City
+      N8N_SECURE_COOKIE: "false"               # necesario para abrirlo en http://localhost
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"    # deja que el flujo lea las variables de abajo
+      INVENTARIO_URL: ${INVENTARIO_URL:-https://inventario-api-qu64.onrender.com}
+      INVENTARIO_API_KEY: ${INVENTARIO_API_KEY:-}
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8ndata:/home/node/.n8n               # <- volumen: tus flujos y cuenta de n8n persisten
+      - ./n8n:/workflows:ro                   # el flujo listo para importar
+
 volumes:
   pgdata:
     name: inventario_pgdata
+  n8ndata:
+    name: inventario_n8ndata

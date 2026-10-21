@@ -70,10 +70,17 @@ Opción B: crea un **Web Service** con runtime Docker y define `DATABASE_URL`, `
 
 Cada `git push` a `main` vuelve a desplegar.
 
-## 5. Consumir desde n8n
+## 5. Consumir desde n8n (n8n en Docker)
 
-1. En n8n: **Workflows → Import from file** → `n8n/workflow-inventario.json`.
-2. En el nodo HTTP Request, cambia la URL por la de tu servicio en Render y pega tu `API_KEY` en el header `X-API-Key`.
-3. Conecta el nodo final a Telegram, Gmail, Slack, etc. para recibir alertas de stock bajo.
+`docker compose up -d` también levanta n8n en http://localhost:5678 (volumen `inventario_n8ndata`).
+El flujo lee la URL y la llave de `INVENTARIO_URL` e `INVENTARIO_API_KEY` en tu `.env`.
+
+1. Abre http://localhost:5678 y crea tu cuenta de n8n (solo la primera vez).
+2. Importa el flujo:
+   ```bash
+   docker compose exec n8n n8n import:workflow --input=/workflows/workflow-inventario.json
+   ```
+3. Recarga n8n, abre "Inventario API - alerta de stock bajo" y dale **Execute workflow**.
+4. Conecta el nodo final a Telegram, Gmail, Slack, etc. para recibir alertas de stock bajo.
 
 > Nota: en el plan gratis de Render el servicio se duerme tras ~15 min sin tráfico; la primera petición tarda unos segundos en despertarlo.

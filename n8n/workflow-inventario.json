@@ -13,7 +13,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $vars.INVENTARIO_URL || 'https://inventario-api-qu64.onrender.com' }}/api/v1/productos",
+        "url": "={{ $env.INVENTARIO_URL }}/api/v1/productos",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -23,7 +23,7 @@
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "X-API-Key", "value": "PEGA_AQUI_TU_API_KEY" }]
+          "parameters": [{ "name": "X-API-Key", "value": "={{ $env.INVENTARIO_API_KEY }}" }]
         },
         "options": {}
       },
