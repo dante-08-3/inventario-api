@@ -1,0 +1,109 @@
+{
+  "name": "Inventario API -> Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "inventario-sheets",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "g1",
+      "name": "Consulta (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, -100],
+      "webhookId": "inventario-sheets"
+    },
+    {
+      "parameters": {},
+      "id": "g2",
+      "name": "Probar a mano",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 100]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.INVENTARIO_URL }}/api/v1/productos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q", "value": "={{ $json.query?.q ?? '' }}" },
+            { "name": "por_pagina", "value": "100" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-API-Key", "value": "={{ $env.INVENTARIO_API_KEY }}" }]
+        },
+        "options": {}
+      },
+      "id": "g3",
+      "name": "Consultar API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "id": "g4",
+      "name": "Un producto por fila",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [500, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f1", "name": "sku", "value": "={{ $json.sku }}", "type": "string" },
+            { "id": "f2", "name": "nombre", "value": "={{ $json.nombre }}", "type": "string" },
+            { "id": "f3", "name": "categoria", "value": "={{ $json.categoria }}", "type": "string" },
+            { "id": "f4", "name": "precio", "value": "={{ Number($json.precio) }}", "type": "number" },
+            { "id": "f5", "name": "stock", "value": "={{ $json.stock }}", "type": "number" },
+            { "id": "f6", "name": "stock_minimo", "value": "={{ $json.stock_minimo }}", "type": "number" },
+            { "id": "f7", "name": "stock_bajo", "value": "={{ $json.stock_bajo ? 'SI' : 'NO' }}", "type": "string" },
+            { "id": "f8", "name": "consultado_en", "value": "={{ $now.setZone('America/Mexico_City').toFormat('yyyy-MM-dd HH:mm:ss') }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "g5",
+      "name": "Preparar fila",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [740, 0]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "__rl": true, "value": "", "mode": "list" },
+        "sheetName": { "__rl": true, "value": "", "mode": "list" },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["sku"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "g6",
+      "name": "Guardar en Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [980, 0]
+    }
+  ],
+  "connections": {
+    "Consulta (webhook)": { "main": [[{ "node": "Consultar API", "type": "main", "index": 0 }]] },
+    "Probar a mano": { "main": [[{ "node": "Consultar API", "type": "main", "index": 0 }]] },
+    "Consultar API": { "main": [[{ "node": "Un producto por fila", "type": "main", "index": 0 }]] },
+    "Un producto por fila": { "main": [[{ "node": "Preparar fila", "type": "main", "index": 0 }]] },
+    "Preparar fila": { "main": [[{ "node": "Guardar en Google Sheets", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
