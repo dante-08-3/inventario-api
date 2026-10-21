@@ -1,0 +1,119 @@
+{
+  "name": "Inventario: llenar la hoja por ID",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "h1",
+      "name": "Probar a mano",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 100]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "inventario-por-id",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "h2",
+      "name": "Consulta (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, -100],
+      "webhookId": "inventario-por-id"
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "", "mode": "list" },
+        "sheetName": { "__rl": true, "value": "", "mode": "list" },
+        "options": {}
+      },
+      "id": "h3",
+      "name": "Leer ids de la hoja",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.INVENTARIO_URL }}/api/productos/{{ $json.id }}",
+        "options": {}
+      },
+      "id": "h4",
+      "name": "Consultar API por id",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "id", "value": "={{ $json.data.id }}", "type": "string" },
+            { "id": "p2", "name": "sku", "value": "={{ $json.data.sku }}", "type": "string" },
+            { "id": "p3", "name": "nombre", "value": "={{ $json.data.nombre }}", "type": "string" },
+            { "id": "p4", "name": "categoria", "value": "={{ $json.data.categoria }}", "type": "string" },
+            { "id": "p5", "name": "precio", "value": "={{ $json.data.precio }}", "type": "number" },
+            { "id": "p6", "name": "stock", "value": "={{ $json.data.stock }}", "type": "number" },
+            { "id": "p7", "name": "stock_minimo", "value": "={{ $json.data.stock_minimo }}", "type": "number" },
+            { "id": "p8", "name": "stock_bajo", "value": "={{ $json.data.stock_bajo ? 'SI' : 'NO' }}", "type": "string" },
+            { "id": "p9", "name": "consultado_en", "value": "={{ $now.setZone('America/Mexico_City').toFormat('yyyy-MM-dd HH:mm:ss') }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "h5",
+      "name": "Preparar fila",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "__rl": true, "value": "", "mode": "list" },
+        "sheetName": { "__rl": true, "value": "", "mode": "list" },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["id"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "h6",
+      "name": "Llenar la hoja",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [960, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "mendozadante08@gmail.com",
+        "subject": "=Inventario actualizado: {{ $('Llenar la hoja').all().length }} productos",
+        "emailType": "text",
+        "message": "=Hola Dante,\n\nTu Google Sheet \"Inventario\" se actualizó con los ids que tiene la hoja.\n\nIds actualizados: {{ $('Preparar fila').all().map(i => i.json.id).join(', ') }}\nProductos: {{ $('Preparar fila').all().map(i => i.json.nombre).join(', ') }}\nCon stock bajo: {{ $('Preparar fila').all().filter(i => i.json.stock_bajo === 'SI').map(i => i.json.nombre).join(', ') || 'ninguno' }}\nFecha: {{ $now.setZone('America/Mexico_City').toFormat('dd/MM/yyyy HH:mm') }}",
+        "options": { "appendAttribution": false }
+      },
+      "id": "h7",
+      "name": "Avisarme por Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1200, 0],
+      "executeOnce": true
+    }
+  ],
+  "connections": {
+    "Probar a mano": { "main": [[{ "node": "Leer ids de la hoja", "type": "main", "index": 0 }]] },
+    "Consulta (webhook)": { "main": [[{ "node": "Leer ids de la hoja", "type": "main", "index": 0 }]] },
+    "Leer ids de la hoja": { "main": [[{ "node": "Consultar API por id", "type": "main", "index": 0 }]] },
+    "Consultar API por id": { "main": [[{ "node": "Preparar fila", "type": "main", "index": 0 }]] },
+    "Preparar fila": { "main": [[{ "node": "Llenar la hoja", "type": "main", "index": 0 }]] },
+    "Llenar la hoja": { "main": [[{ "node": "Avisarme por Gmail", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
